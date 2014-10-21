@@ -23,7 +23,7 @@ func (q *GLockQueue) Size() int {
 	return q.list.Len()
 }
 
-func (q *GLockQueue) push(val interface{}) *list.Element {
+func (q *GLockQueue) Push(val interface{}) *list.Element {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	e := q.list.PushFront(val)
