@@ -1,4 +1,4 @@
-package gqueue
+package base
 
 import (
 	"fmt"
