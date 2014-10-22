@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const ThreadNums = 10
+const ThreadNums = 100
 
 func productGBoundedBlockingQueue(c chan<- int, i int, GCQ *GBoudedBlockingQueue) {
 	defer func() { c <- 0 }()
@@ -34,4 +34,5 @@ func Test_GBoundedBlockingQueue(t *testing.T) {
 	for i := 2 * ThreadNums; i > 0; i-- {
 		<-c
 	}
+	fmt.Println("queue size is: ", GCQ.size())
 }

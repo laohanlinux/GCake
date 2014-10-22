@@ -2,7 +2,7 @@ package gqueue
 
 import (
 	"container/list"
-	"fmt"
+	//"fmt"
 	"sync"
 )
 
@@ -36,10 +36,10 @@ func (gbq *GBoudedBlockingQueue) capacity() int {
 
 func (gbq *GBoudedBlockingQueue) Put(value interface{}) {
 	gbq.mutex.Lock()
-	fmt.Println("Put Element: ", value)
+	//fmt.Println("Put Element: ", value)
 	defer gbq.mutex.Unlock()
 	for gbq.queue.Len() >= gbq.queueCapacity {
-		fmt.Println("queue is full, ", value)
+		//fmt.Println("queue is full, ", value)
 		gbq.notFull.wait()
 	}
 	gbq.queue.PushFront(value)
@@ -49,10 +49,10 @@ func (gbq *GBoudedBlockingQueue) Put(value interface{}) {
 
 func (gbq *GBoudedBlockingQueue) take() *list.Element {
 	gbq.mutex.Lock()
-	fmt.Println("Take a Element")
+	//fmt.Println("Take a Element")
 	defer gbq.mutex.Unlock()
 	for gbq.queue.Len() == 0 {
-		fmt.Println("queue is empty!!!")
+		//fmt.Println("queue is empty!!!")
 		gbq.notEmpty.wait()
 	}
 	e := gbq.queue.Back()
@@ -75,10 +75,10 @@ func (gbq *GBoudedBlockingQueue) empty() bool {
 	gbq.mutex.Lock()
 	defer gbq.mutex.Unlock()
 	if gbq.queue.Len() == 0 {
-		fmt.Println("queue is empty")
+		//fmt.Println("queue is empty")
 		return true
 	} else {
-		fmt.Println("queue is not empty")
+		//fmt.Println("queue is not empty")
 		return false
 	}
 }
