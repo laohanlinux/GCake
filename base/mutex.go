@@ -8,6 +8,10 @@ type MutexLock struct {
 	mutex sync.Mutex
 }
 
+func NewMutexLock() *MutexLock {
+	m_ := new(MutexLock)
+	return m_
+}
 func (m MutexLock) isLockByThisThread() {}
 
 func (m MutexLock) assertLocked() {}
@@ -29,6 +33,11 @@ type MutexLockGuard struct {
 	mutex *MutexLock
 }
 
+func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{})) {
+	(*mutex_).lock()
+	defer (*mutex_).unlock()
+	f()
+}
 func (MLG MutexLockGuard) NewMutexLock(mutex *MutexLock) {
 	(*mutex).lock()
 }
