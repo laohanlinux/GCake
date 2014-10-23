@@ -8,7 +8,7 @@ import (
 )
 
 type Thread struct {
-	func_       func(...interface{})
+	func_       func(...interface{}) interface{}
 	c           chan string
 	name_       string
 	numCreated_ int32
@@ -16,7 +16,7 @@ type Thread struct {
 	signalbool  bool
 }
 
-func NewThread(threadFunc_ func(...interface{}), name string, join bool) Thread {
+func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join bool) Thread {
 	started_ := false
 	func_ := threadFunc_
 	name_ := name

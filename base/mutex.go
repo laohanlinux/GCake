@@ -33,11 +33,13 @@ type MutexLockGuard struct {
 	mutex *MutexLock
 }
 
-func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{})) {
+/// too complex .....
+func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{}) interface{}) interface{} {
 	(*mutex_).lock()
 	defer (*mutex_).unlock()
-	f()
+	return f()
 }
+
 func (MLG MutexLockGuard) NewMutexLock(mutex *MutexLock) {
 	(*mutex).lock()
 }
