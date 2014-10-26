@@ -27,4 +27,5 @@ func Test_ThreadObj(t *testing.T) {
 	T.start()
 	fmt.Println("waitting for thread exit")
 	fmt.Println(T.join())
+
 }

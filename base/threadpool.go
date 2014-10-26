@@ -7,8 +7,8 @@ import (
 )
 
 type ThreadPool struct {
-	// task
-	task_    func(...interface{}) interface{}
+	// task, task should be a function, the function is about handle some thing of caculating, store or others,
+	// it also should be a function for thread
 	mutex_   *MutexLock
 	cond_    *Condition
 	name_    string
@@ -31,34 +31,8 @@ func NewThreadPool(name string, join bool) *ThreadPool {
 		name_:    name_,
 		running_: running_,
 		join_:    join,
-		task_:    threadpoolFunc, //define sub thread fyunction
 		queue_:   queue_,
 	}
-}
-
-func threadpoolFunc(i ...interface{}) interface{} {
-	if len(i) > 0 {
-		switch t := i[0].(type) {
-		case ThreadPool:
-			LockAndUnlock(t.mutex_, func(args ...interface{}) interface{} {
-				for t.queue_.Len() == 0 && *t.running_ {
-					t.cond_.wait()
-				}
-				if t.queue_.Len() > 0 {
-					e := t.queue_.Back()
-					t.queue_.Remove(e)
-					return e.Value
-				} else {
-					return nil
-				}
-			})
-		default:
-
-		}
-	} else {
-		fmt.Println("threadpoolFunc excute fail")
-	}
-	return nil
 }
 
 // start thread pool, that is say that start thread function
@@ -68,11 +42,17 @@ func (t ThreadPool) start(numThreads int) {
 		return
 	}
 	*t.running_ = true
-	for i := 0; i > numThreads; i++ {
-		t.threads_ = append(t.threads_, NewThread(t.task_, strconv.Itoa(i), t.join_))
-		// start thread
-		t.threads_[i].start()
+	f := func(...interface{}) interface{} {
+		for i := 0; i < numThreads; i++ {
+			fmt.Println("start ", i, " thraed")
+			t.threads_ = append(t.threads_, NewThread(t.runInThread, strconv.Itoa(i), t.join_))
+			// start thread
+			t.threads_[i].start()
+		}
+		fmt.Println("finish all subthread start ....")
+		return nil
 	}
+	LockAndUnlock(t.mutex_, f)
 }
 
 func (t ThreadPool) stop() {
@@ -90,20 +70,51 @@ func (t ThreadPool) stop() {
 	LockAndUnlock(t.mutex_, f)
 }
 
-func (t ThreadPool) runInThread() {
+func (t ThreadPool) run(task func(args ...interface{}) interface{}) {
+	if len(t.threads_) == 0 {
+		fmt.Println("handle in main threads")
+		task()
+	} else {
+		LockAndUnlock(t.mutex_, func(...interface{}) interface{} {
+			t.queue_.PushFront(task)
+			t.cond_.notify()
+			return nil
+		})
+	}
+}
+
+func (t ThreadPool) take() interface{} {
+	f := func(args ...interface{}) interface{} {
+		for t.queue_.Len() == 0 && *t.running_ {
+			t.cond_.wait()
+		}
+		if t.queue_.Len() > 0 {
+			e := t.queue_.Back()
+			t.queue_.Remove(e)
+			return e.Value
+		} else {
+			return nil
+		}
+	}
+	LockAndUnlock(t.mutex_, f)
+	return nil
+}
+
+func (t ThreadPool) runInThread(args ...interface{}) interface{} {
 	defer func() {
 		if e := recover(); e != nil {
 			fmt.Println(e)
 		}
 	}()
-
+	fmt.Println("runInThread ...")
 	// thread pool should be running
 	for *t.running_ {
-		task := t.task_()
+		task := t.take()
 		switch tk := task.(type) {
 		case func(...interface{}) interface{}:
 			tk()
 		default:
 		}
 	}
+	return nil
 }

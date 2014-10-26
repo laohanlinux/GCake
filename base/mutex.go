@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -17,10 +18,12 @@ func (m MutexLock) isLockByThisThread() {}
 func (m MutexLock) assertLocked() {}
 
 func (m MutexLock) lock() {
+	fmt.Printf("lock Mutex add %p\n", &m)
 	m.mutex.Lock()
 }
 
 func (m MutexLock) unlock() {
+	fmt.Println("unlcok Mutex add %p\n", &m)
 	m.mutex.Unlock()
 }
 
@@ -36,8 +39,14 @@ type MutexLockGuard struct {
 /// too complex .....
 func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{}) interface{}) interface{} {
 	(*mutex_).lock()
-	defer (*mutex_).unlock()
-	return f()
+	defer func() {
+		if e := recover(); e != nil {
+			fmt.Println(e)
+		}
+	}()
+	f()
+	(*mutex_).unlock()
+	return nil
 }
 
 func (MLG MutexLockGuard) NewMutexLock(mutex *MutexLock) {
