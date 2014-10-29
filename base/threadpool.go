@@ -21,7 +21,7 @@ type ThreadPool struct {
 func NewThreadPool(name string, join bool) *ThreadPool {
 	mutex_ := NewMutexLock()
 	fmt.Printf("pool mutex %p\n", mutex_.mutex)
-	cond_ := NewCondition(&mutex_.mutex)
+	cond_ := NewCondition(mutex_.mutex)
 	name_ := name
 	running_ := new(bool)
 	*running_ = false
@@ -50,7 +50,8 @@ func (t ThreadPool) start(numThreads int) {
 			// start thread
 			t.threads_[i].start()
 		}
-		fmt.Println("finish all subthread start ....")
+		fmt.Println("finish all subthread start ....", len(t.threads_))
+		fmt.Printf("\npool address: %p\n", &t)
 		return nil
 	}
 	LockAndUnlock(t.mutex_, f)
@@ -72,8 +73,9 @@ func (t ThreadPool) stop() {
 }
 
 func (t ThreadPool) run(task func(args ...interface{}) interface{}) {
+	fmt.Printf("\npool address: %p\n", &t)
 	if len(t.threads_) == 0 {
-		fmt.Println("handle in main threads")
+		fmt.Println("handle in main threads, sub num is ", len(t.threads_))
 		task()
 	} else {
 		LockAndUnlock(t.mutex_, func(...interface{}) interface{} {
@@ -87,13 +89,16 @@ func (t ThreadPool) run(task func(args ...interface{}) interface{}) {
 func (t ThreadPool) take() interface{} {
 	f := func(args ...interface{}) interface{} {
 		for t.queue_.Len() == 0 && *t.running_ {
+			fmt.Println("waiting task")
 			t.cond_.wait()
 		}
+		fmt.Println("Get the task!!!")
 		if t.queue_.Len() > 0 {
 			e := t.queue_.Back()
 			t.queue_.Remove(e)
 			return e.Value
 		} else {
+			fmt.Println("Queue is empty!!NONONO")
 			return nil
 		}
 	}
@@ -107,7 +112,7 @@ func (t ThreadPool) runInThread(args ...interface{}) interface{} {
 			fmt.Println(e)
 		}
 	}()
-	fmt.Println("runInThread ...")
+	fmt.Println("... runInThread ...")
 	// thread pool should be running
 	for *t.running_ {
 		task := t.take()

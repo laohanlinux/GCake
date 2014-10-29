@@ -12,4 +12,5 @@ func Test_Mutex(t *testing.T) {
 		return nil
 	}
 	LockAndUnlock(m, f)
+
 }
