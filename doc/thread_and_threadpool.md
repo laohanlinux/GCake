@@ -1,4 +1,4 @@
-## Thread And Thread Pool 
+## Thread And Thread Pool
 
 这一章是线程对象和线程池的设计，虽然在`go`中，线程是非常低资源的，但是为了和`muduo`一样，暂时先这样，以后再改吧。
 
@@ -89,36 +89,36 @@ func (t Thread) runInThread() {
 - ### threadpool ###
 
 这个线程池主要功能:
-  
+
    - 主线程（线程池线程）在线程池为空的时候，会自己执行任务。
 
    - 子线程只有在线程池处于运行状态时才可以执行任务
 
    - 线程池停止时，会通知子线程，子线程接收到信息会退出，线程池线程可以获取子线程的退出信息
 
-   - 当线程池发生意外退出时，不会影响到其他线程；但是线程池线程不会创建新的线程来替代意外退出的线程
+   - 当线程池发生意外退出时，不会影响到其他线程；并且线程池线程会创建新的线程来替代意外退出的线程，也可以说，一直有固定大小个子线程在运行
 
    - 线程池是通过信号量来实现的
 
    - 任务是一个多参数函数体
 
    - 任务队列是一个线程安全的`list`容器
-   
-   -	 `LockAndUnlock` 函数可以简单实现锁，因为`golang`没有构造函数和虚函数，所以使用`defer`简单实现
+
+   -     `LockAndUnlock` 函数可以简单实现锁，因为`golang`没有构造函数和虚函数，所以使用`defer`简单实现
 
 
 线程池的主要成员有：
 ```
 type ThreadPool struct {
-	// task, task should be a function, the function is about handle some thing of caculating, store or others,
-	// it also should be a function for thread
-	mutex_   *MutexLock
-	cond_    *Condition
-	name_    string
-	threads_ []*Thread
-	running_ bool
-	queue_   *list.List // queue should store task, and the task  should be a function
-	join_    bool
+    // task, task should be a function, the function is about handle some thing of caculating, store or others,
+    // it also should be a function for thread
+    mutex_   *MutexLock
+    cond_    *Condition
+    name_    string
+    threads_ []*Thread
+    running_ bool
+    queue_   *list.List // queue should store task, and the task  should be a function
+    join_    bool
 }
 ```
 
