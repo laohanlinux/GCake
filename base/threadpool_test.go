@@ -45,6 +45,5 @@ func Test_ThreadPool(t *testing.T) {
 			T.run(t1)
 		}
 	}
-	fmt.Println("<<<<<<<<<<>>>>>>>>>")
 	T.stop()
 }

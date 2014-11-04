@@ -39,7 +39,6 @@ type MutexLockGuard struct {
 /// too complex .....
 func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{}) interface{}) interface{} {
 	mutex_.lock()
-	fmt.Println("Get the Lock, ", mutex_)
 	defer func() {
 		if e := recover(); e != nil {
 			fmt.Println(e)
@@ -47,7 +46,6 @@ func LockAndUnlock(mutex_ *MutexLock, f func(args ...interface{}) interface{}) i
 	}()
 	f()
 	mutex_.unlock()
-	fmt.Println("release The lock ", mutex_)
 	return nil
 }
 

@@ -67,11 +67,9 @@ func (t *ThreadPool) stop() {
 
 func (t *ThreadPool) run(task func(args ...interface{}) interface{}) {
 	if len(t.threads_) == 0 {
-		fmt.Println("handle in main threads, sub num is ", len(t.threads_))
 		task()
 	} else {
 		LockAndUnlock(t.mutex_, func(...interface{}) interface{} {
-			fmt.Printf("push a task in queue and the task is %T\n", task)
 			t.queue_.PushFront(task)
 			t.cond_.notify()
 			return nil
@@ -88,7 +86,6 @@ func (t *ThreadPool) take() interface{} {
 	}()
 	//if pool is stop, it also jump out the block
 	for t.queue_.Len() == 0 && t.running_ {
-		fmt.Println("queue is empty, condition waiting task")
 		t.cond_.wait()
 	}
 	if t.queue_.Len() > 0 {
@@ -104,24 +101,22 @@ func (t *ThreadPool) take() interface{} {
 func (t *ThreadPool) runInThread(args ...interface{}) interface{} {
 	defer func() {
 		panic("sub abort error")
-		/* if e := recover(); e != nil {*/
-		//// if we want to disaster recovery for sub thread, can do that
-		//t.mutex_.lock()
-		//[>if len(args) > 0 {<]
-		////switch n := args[0].(type) {
-		////case string:
-		////if i, err := strconv.Atoi(n); err == nil {
-		////t.threads_[i].SetSignalbool(false)
-		////t.threads_[i] = NewThread(t.runInThread, n, t.join_)
-		////t.threads_[i].start()
-		////}
-		////default:
-		////panic("args must be sub thread name")
-		////}
-		//[>}<]
-		//panic(e)
-		//t.mutex_.unlock()
-		/*}*/
+		if e := recover(); e != nil {
+			// if we want to disaster recovery for sub thread, can do that
+			t.mutex_.lock()
+			switch n := args[0].(type) {
+			case string:
+				if i, err := strconv.Atoi(n); err == nil {
+					t.threads_[i].SetSignalbool(false)
+					t.threads_[i] = NewThread(t.runInThread, n, t.join_)
+					t.threads_[i].start()
+				}
+			default:
+				fmt.Println("args must be sub thread name")
+			}
+			panic(e)
+			t.mutex_.unlock()
+		}
 	}()
 	// thread pool should be running
 	for t.running_ {
