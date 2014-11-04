@@ -16,14 +16,14 @@ type Thread struct {
 	signalbool  bool
 }
 
-func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join bool) Thread {
+func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join bool) *Thread {
 	started_ := false
 	func_ := threadFunc_
 	name_ := name
 
 	var numCreated_ int32 = 0
 	if join == false {
-		return Thread{
+		return &Thread{
 			func_:       func_,
 			name_:       name_,
 			numCreated_: atomic.AddInt32(&numCreated_, 1),
@@ -32,7 +32,7 @@ func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join b
 		}
 	} else {
 		c := make(chan string)
-		return Thread{
+		return &Thread{
 			func_:       func_,
 			name_:       name_,
 			c:           c,
@@ -42,7 +42,7 @@ func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join b
 		}
 	}
 }
-func (t Thread) start() {
+func (t *Thread) start() {
 	if t.started_ == false {
 		go t.startThread()
 	} else {
@@ -50,26 +50,31 @@ func (t Thread) start() {
 		return
 	}
 }
-func (t Thread) join() string {
+func (t *Thread) join() string {
 	exit := <-t.c
 	return exit
 }
-func (t Thread) numCreated() int32 {
+func (t *Thread) numCreated() int32 {
 	return t.numCreated_
 }
 
-func (t Thread) startThread() {
+func (t *Thread) SetSignalbool(b bool) {
+	t.signalbool = b
+}
+
+func (t *Thread) startThread() {
 	t.runInThread()
 }
 
-func (t Thread) runInThread() {
+func (t *Thread) runInThread() {
 	defer func() {
 		if e := recover(); e != nil {
-			fmt.Println(e)
+			fmt.Println("sub thread runtime error: ", e)
+		}
+		if t.signalbool == true {
+			t.c <- "normal"
+			fmt.Println("sent signalbool normal, sub_name is ", t.name_)
 		}
 	}()
-	t.func_()
-	if t.signalbool == true {
-		t.c <- "normal"
-	}
+	t.func_(t.name_)
 }

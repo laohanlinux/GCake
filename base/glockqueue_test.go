@@ -22,6 +22,30 @@ func (q QB) Value(i interface{}) QB {
 	return q
 }
 
+func printHello(args ...interface{}) interface{} {
+	fmt.Println("Hello Word!! ", args)
+	return nil
+}
+
+func Test_Func(t *testing.T) {
+	GCQ := NewGLockQueue()
+	f := printHello
+	GCQ.Push(f)
+	task := GCQ.Pop().Value
+	fmt.Printf("task type : %T\n", task)
+	switch tk := task.(type) {
+	case func(...interface{}) interface{}:
+		tk()
+		fmt.Println("fuck")
+	case interface{}:
+		fmt.Println("tk:", tk)
+	default:
+		fmt.Println("value is error")
+	}
+	fmt.Printf("task : %T\n", task)
+
+	fmt.Println(reflect.ValueOf(task))
+}
 func Test_GLockQueue(t *testing.T) {
 	GCQ := NewGLockQueue()
 	GCQ.Push("a")
