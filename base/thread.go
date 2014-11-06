@@ -2,13 +2,14 @@ package base
 
 // thread obj, but i think need not to do, later i will improve, but now ......
 import (
-	"fmt"
 	"sync/atomic"
 	//"github.com/bmizerany/assert"
+	"github.com/laohanlinux/go-logger/logger"
 )
 
+type ThreadFunc func(...interface{}) interface{}
 type Thread struct {
-	func_       func(...interface{}) interface{}
+	func_       ThreadFunc
 	c           chan string
 	name_       string
 	numCreated_ int32
@@ -16,7 +17,7 @@ type Thread struct {
 	signalbool  bool
 }
 
-func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join bool) *Thread {
+func NewThread(threadFunc_ ThreadFunc, name string, join bool) *Thread {
 	started_ := false
 	func_ := threadFunc_
 	name_ := name
@@ -42,19 +43,19 @@ func NewThread(threadFunc_ func(...interface{}) interface{}, name string, join b
 		}
 	}
 }
-func (t *Thread) start() {
+func (t *Thread) Start() {
 	if t.started_ == false {
 		go t.startThread()
 	} else {
-		fmt.Println("Failed in pthread_create")
+		logger.Error("Failed in pthread_create")
 		return
 	}
 }
-func (t *Thread) join() string {
+func (t *Thread) Join() string {
 	exit := <-t.c
 	return exit
 }
-func (t *Thread) numCreated() int32 {
+func (t *Thread) NumCreated() int32 {
 	return t.numCreated_
 }
 
@@ -69,11 +70,11 @@ func (t *Thread) startThread() {
 func (t *Thread) runInThread() {
 	defer func() {
 		if e := recover(); e != nil {
-			fmt.Println("sub thread runtime error: ", e)
+			logger.Error("sub thread runtime error: ", e)
 		}
 		if t.signalbool == true {
 			t.c <- "normal"
-			fmt.Println("sent signalbool normal, sub_name is ", t.name_)
+			logger.Info("sent signalbool normal, sub_name is ", t.name_)
 		}
 	}()
 	t.func_(t.name_)

@@ -2,10 +2,11 @@ package base
 
 import (
 	"fmt"
+	"github.com/laohanlinux/go-logger/logger"
 	"testing"
 )
 
-func threadFunc(args ...interface{}) interface{} {
+func threadFunc_(args ...interface{}) interface{} {
 	if len(args) == 0 {
 		fmt.Println("run in thread function!!!!")
 	} else {
@@ -15,17 +16,17 @@ func threadFunc(args ...interface{}) interface{} {
 }
 
 func Test_ThreadObj(t *testing.T) {
-	T := NewThread(threadFunc, "one", true)
-	T.start()
+	logger.Info("Good!!!!")
+	T := NewThread(threadFunc_, "one", true)
+	T.Start()
 	fmt.Println("waitting for thread exit")
-	fmt.Println(T.join())
+	fmt.Println(T.Join())
 
-	T = NewThread(threadFunc, "one", false)
-	T.start()
+	T = NewThread(threadFunc_, "one", false)
+	T.Start()
 
-	T = NewThread(threadFunc, "one", true)
-	T.start()
+	T = NewThread(threadFunc_, "one", true)
+	T.Start()
 	fmt.Println("waitting for thread exit")
-	fmt.Println(T.join())
-
+	fmt.Println(T.Join())
 }

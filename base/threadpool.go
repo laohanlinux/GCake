@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+type Task func(...interface{}) interface{}
+
 type ThreadPool struct {
 	// task, task should be a function, the function is about handle some thing of caculating, store or others,
 	// it also should be a function for thread
@@ -45,7 +47,7 @@ func (t *ThreadPool) start(numThreads int) {
 		fmt.Println("start ", i, " thraed ")
 		t.threads_ = append(t.threads_, NewThread(t.runInThread, strconv.Itoa(i), t.join_))
 		// start thread
-		t.threads_[i].start()
+		t.threads_[i].Start()
 	}
 	fmt.Println("finish all subthread start ....", len(t.threads_))
 }
@@ -60,12 +62,12 @@ func (t *ThreadPool) stop() {
 	if t.join_ {
 		for _, k := range t.threads_ {
 			fmt.Println("wait sub exit")
-			k.join()
+			k.Join()
 		}
 	}
 }
 
-func (t *ThreadPool) run(task func(args ...interface{}) interface{}) {
+func (t *ThreadPool) run(task Task) {
 	if len(t.threads_) == 0 {
 		fmt.Println("handle in main threads, sub num is ", len(t.threads_))
 		task()
@@ -79,7 +81,7 @@ func (t *ThreadPool) run(task func(args ...interface{}) interface{}) {
 	}
 }
 
-func (t *ThreadPool) take() interface{} {
+func (t *ThreadPool) take() Task {
 	t.mutex_.lock()
 	defer func() {
 		if t.mutex_ != nil {
@@ -94,7 +96,12 @@ func (t *ThreadPool) take() interface{} {
 	if t.queue_.Len() > 0 {
 		e := t.queue_.Back()
 		t.queue_.Remove(e)
-		return e.Value
+		switch task := e.Value.(type) {
+		case Task:
+			return task
+		default:
+			return nil
+		}
 	} else {
 		fmt.Println("Queue is empty!!NONONO")
 		return nil
@@ -104,24 +111,6 @@ func (t *ThreadPool) take() interface{} {
 func (t *ThreadPool) runInThread(args ...interface{}) interface{} {
 	defer func() {
 		panic("sub abort error")
-		/* if e := recover(); e != nil {*/
-		//// if we want to disaster recovery for sub thread, can do that
-		//t.mutex_.lock()
-		//[>if len(args) > 0 {<]
-		////switch n := args[0].(type) {
-		////case string:
-		////if i, err := strconv.Atoi(n); err == nil {
-		////t.threads_[i].SetSignalbool(false)
-		////t.threads_[i] = NewThread(t.runInThread, n, t.join_)
-		////t.threads_[i].start()
-		////}
-		////default:
-		////panic("args must be sub thread name")
-		////}
-		//[>}<]
-		//panic(e)
-		//t.mutex_.unlock()
-		/*}*/
 	}()
 	// thread pool should be running
 	for t.running_ {
@@ -133,12 +122,7 @@ func (t *ThreadPool) runInThread(args ...interface{}) interface{} {
 				fmt.Println("the queue should not be empty!!!")
 			}
 		} else {
-			switch tk := task.(type) {
-			case func(...interface{}) interface{}:
-				tk()
-			default:
-				fmt.Println("task format is error")
-			}
+			task()
 		}
 	}
 	return nil
