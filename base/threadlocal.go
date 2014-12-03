@@ -1,9 +1,8 @@
 package base
 
 import (
-	"fmt"
 	"github.com/funny/goid"
-	"os"
+	"sync"
 )
 
 /*
@@ -20,6 +19,7 @@ type GoruntineStoreData interface{}
 type GoruntineStore struct {
 	c        chan int
 	gsVector map[GoruntineId]GoruntineStoreData
+	lock     *sync.Mutex
 }
 
 var goruntineStore *GoruntineStore
@@ -37,19 +37,14 @@ func CreateGoruntineStore() {
 	goruntineStore = new(GoruntineStore)
 	goruntineStore.c = make(chan int)
 	goruntineStore.gsVector = make(map[GoruntineId]GoruntineStoreData)
+	goruntineStore.lock = &sync.Mutex{}
 }
 
 func GoruntineSetSpecific(value GoruntineStoreData) {
 	defer func() {
-		if e := recover(); e != nil {
-			fmt.Println("error: ", value, goruntineStore, e)
-		}
+		goruntineStore.lock.Unlock()
 	}()
-	if goruntineStore == nil || goruntineStore.gsVector == nil {
-		fmt.Println("================================================")
-		os.Exit(-1)
-	} else {
-	}
+	goruntineStore.lock.Lock()
 	goruntineStore.gsVector[GoruntineId(goid.Get())] = value
 }
 
@@ -58,6 +53,10 @@ func GoruntineSetSpecific(value GoruntineStoreData) {
 //}
 
 func GoruntineGetSpecific() GoruntineStoreData {
+	defer func() {
+		goruntineStore.lock.Unlock()
+	}()
+	goruntineStore.lock.Lock()
 	return goruntineStore.gsVector[GoruntineId(goid.Get())]
 }
 
