@@ -10,6 +10,8 @@ type EventLoop struct {
 	isInLoopThread bool
 }
 
+var t_looInThisThread *EventLoop
+
 func (elp EventLoop) assertInLoopThread() {
 	if !elp.isInLoopThread {
 		os.Exit(127)
