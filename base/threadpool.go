@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"fmt"
 	"strconv"
+
+	"github.com/laohanlinux/go-logger/logger"
 )
 
 type Task func(...interface{}) interface{}
@@ -39,7 +41,7 @@ func NewThreadPool(name string, join bool) *ThreadPool {
 // start thread pool, that is say that start thread function
 func (t *ThreadPool) start(numThreads int) {
 	if len(t.threads_) != 0 {
-		fmt.Println("ThreadPool start fail because of threads is not empty!!!")
+		logger.Info("ThreadPool start fail because of threads is not empty!!!")
 		return
 	}
 	t.running_ = true
@@ -110,7 +112,10 @@ func (t *ThreadPool) take() Task {
 
 func (t *ThreadPool) runInThread(args ...interface{}) interface{} {
 	defer func() {
-		panic("sub abort error")
+		//panic("sub abort error")
+		if e := recover(); e != nil {
+			logger.Error("sub abort exit, exit reason is: ", e)
+		}
 	}()
 	// thread pool should be running
 	for t.running_ {

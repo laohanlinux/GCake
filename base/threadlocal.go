@@ -1,7 +1,7 @@
 package base
 
 import (
-	"github.com/funny/goid"
+	"github.com/laohanlinux/go-logger/logger"
 	"sync"
 )
 
@@ -10,14 +10,14 @@ import (
 GoruntineStore 结构内, 可以根据GoruntineId 进行检索!!!
 * */
 
-type GoruntineId int
+type GoruntineId int32
 
 type GoruntineStoreData interface{}
 
 //type GoruntineStoreData []interface{}
 
 type GoruntineStore struct {
-	c        chan int
+	c        chan int32
 	gsVector map[GoruntineId]GoruntineStoreData
 	lock     *sync.Mutex
 }
@@ -26,16 +26,21 @@ var goruntineStore *GoruntineStore
 
 func init() {
 	CreateGoruntineStore()
+	go func() {
+		if goruntineStore != nil {
+			for {
+				GoruntineDeleteSpecific(<-goruntineStore.c)
+			}
+		}
+	}()
 }
-
-var p int64
 
 func CreateGoruntineStore() {
 	if goruntineStore != nil {
 		return
 	}
 	goruntineStore = new(GoruntineStore)
-	goruntineStore.c = make(chan int)
+	goruntineStore.c = make(chan int32)
 	goruntineStore.gsVector = make(map[GoruntineId]GoruntineStoreData)
 	goruntineStore.lock = &sync.Mutex{}
 }
@@ -45,7 +50,7 @@ func GoruntineSetSpecific(value GoruntineStoreData) {
 		goruntineStore.lock.Unlock()
 	}()
 	goruntineStore.lock.Lock()
-	goruntineStore.gsVector[GoruntineId(goid.Get())] = value
+	goruntineStore.gsVector[GoruntineId(CurrentGoroutineId())] = value
 }
 
 //func GoruntineSetSpecific(goruntineStore *GoruntineStore, value interface{}) {
@@ -57,7 +62,12 @@ func GoruntineGetSpecific() GoruntineStoreData {
 		goruntineStore.lock.Unlock()
 	}()
 	goruntineStore.lock.Lock()
-	return goruntineStore.gsVector[GoruntineId(goid.Get())]
+	return goruntineStore.gsVector[GoruntineId(CurrentGoroutineId())]
+}
+
+func GoruntineDeleteSpecific(gid int32) {
+	logger.Info("delete a thread local store, gid: ", gid)
+	delete(goruntineStore.gsVector, GoruntineId(gid))
 }
 
 /*func GoruntineGetSpecific(goruntineStore *GoruntineStore) {*/

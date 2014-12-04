@@ -3,7 +3,10 @@ package base
 // thread obj, but i think need not to do, later i will improve, but now ......
 import (
 	"sync/atomic"
-	//"github.com/bmizerany/assert"
+
+	//_ "GCake/net"
+
+	"github.com/funny/goid"
 	"github.com/laohanlinux/go-logger/logger"
 )
 
@@ -15,6 +18,7 @@ type Thread struct {
 	numCreated_ int32
 	started_    bool
 	signalbool  bool
+	g_id        int32
 }
 
 func NewThread(threadFunc_ ThreadFunc, name string, join bool) *Thread {
@@ -64,6 +68,8 @@ func (t *Thread) SetSignalbool(b bool) {
 }
 
 func (t *Thread) startThread() {
+	// update gid
+	t.g_id = goid.Get()
 	t.runInThread()
 }
 
@@ -76,6 +82,8 @@ func (t *Thread) runInThread() {
 			t.c <- "normal"
 			logger.Info("sent signalbool normal, sub_name is ", t.name_)
 		}
+		goruntineStore.c <- CurrentGoroutineId()
 	}()
+	logger.Info("start excute goroutine function body", t.name_, t.func_)
 	t.func_(t.name_)
 }
